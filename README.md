@@ -1,5 +1,40 @@
 # ![Shaka Player](docs/shaka-player-logo.png)
 
+---
+
+## WebOS Branch
+
+This branch (`webos`) contains patches for LG WebOS TV platform support,
+based on upstream Shaka Player `v4.16.5`, with the following two patches applied.
+
+### Patch 1 — Add WebOSBrowser device for WebOS Crow browser (2026-03-13)
+
+Introduces a `WebOSBrowser` device class to support the WebOS Crow browser
+(detected via the `Colt` userAgent string).
+- Does not rely on PalmService or PalmSystem APIs
+- Assumes HDR support by default
+- Uses default hardware resolution detection
+
+### Patch 2 — Add mediaOption support to optimize resource allocation (2026-03-17)
+
+Automatically configures WebOS TV's `mediaOption` property to provide resolution
+and frame rate hints to the platform before MediaSource creation.
+
+**Background**: WebOS manages background resource cleanup based on media resource
+information. For MSE (adaptive streaming), the platform allocates maximum resources
+by default. By providing resolution and frame rate hints upfront via `mediaOption`,
+this patch enables the platform to optimize hardware decoder preparation and minimize
+unnecessary resource cleanup during playback.
+
+**Key changes**:
+- Add `setMediaOptionFromManifest()` method to `IDevice` / `AbstractDevice`
+- Extract max resolution (width, height) and frame rate from manifest variants and apply them to `mediaOption` automatically
+- Preserve user-defined settings with higher priority; fill only missing values from the manifest
+- Update `Player.load()` to set `mediaOption` after manifest parsing
+- Defer MediaSource creation in `Player.attach()` until `load()` time
+
+---
+
 Shaka Player is an open-source JavaScript library for adaptive media.  It plays
 adaptive media formats (such as [DASH][], [HLS][] and [MSS][]) in a browser,
 without using plugins or Flash.  Instead, Shaka Player uses the open web
