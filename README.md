@@ -5,7 +5,7 @@
 ## WebOS Branch
 
 This branch (`webos`) contains patches for LG WebOS TV platform support,
-based on upstream Shaka Player `v4.16.5`, with the following two patches applied.
+based on upstream Shaka Player `v4.16.5`, with the following patches applied.
 
 ### Patch 1 — Add WebOSBrowser device for WebOS Crow browser (2026-03-13)
 
@@ -32,6 +32,24 @@ unnecessary resource cleanup during playback.
 - Preserve user-defined settings with higher priority; fill only missing values from the manifest
 - Update `Player.load()` to set `mediaOption` after manifest parsing
 - Defer MediaSource creation in `Player.attach()` until `load()` time
+
+### Patch 3 — Fix HLS Dolby Vision variant dropped with preferredKeySystems (2026-04-14)
+
+Fixes an issue where HLS SUPPLEMENTAL-CODECS variants (e.g. Dolby Vision
+`dvh1`) are incorrectly dropped when `preferredKeySystems` is configured.
+
+**Root cause**: In `getDecodingInfosForVariants`, the preferred key system loop
+could early-return after a base codec variant (e.g. `hvc1`) is satisfied,
+leaving the supplemental codec variant (`dvh1`) with empty `decodingInfos`.
+This happens because HLS creates separate variants for supplemental codecs,
+and DRM info is only available after lazy-loading the media playlist — which
+may not have occurred for the supplemental variant at this point.
+
+**Fix**: The early return now only triggers when all variants have non-empty
+`decodingInfos`, ensuring unchecked variants proceed to the fallback loop.
+
+Found during HLS-CBCS Dolby Vision playback testing with:
+https://ott.dolby.com/spott_releases/index.html
 
 ---
 
